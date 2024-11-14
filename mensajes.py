@@ -1,4 +1,5 @@
 from fastapi import FastAPI, HTTPException
+from pydantic import BaseModel
 import requests
 import os
 from dotenv import load_dotenv
@@ -8,23 +9,34 @@ load_dotenv()
 
 app = FastAPI()
 
-# Asignar la clave de API de Groq desde el entorno
-GROQ_API_KEY = os.getenv("GROQ_API_KEY")
+# Clase para recibir la clave de API de Groq
+class APIKeyRequest(BaseModel):
+    api_key: str
+
+# Variable global para almacenar la clave de API de Groq
+global_groq_api_key = os.getenv("GROQ_API_KEY")
 
 # Ruta para verificar si el servicio está activo
 @app.get("/")
 def read_root():
     return {"message": "API de FastAPI con Groq está en funcionamiento"}
 
+# Ruta para configurar la clave de API de Groq
+@app.post("/set-api-key")
+def set_api_key(api_key_request: APIKeyRequest):
+    global global_groq_api_key
+    global_groq_api_key = api_key_request.api_key
+    return {"message": "Clave de API de Groq configurada exitosamente"}
+
 # Ruta para interactuar con Groq
 @app.post("/groq")
 def interact_with_groq(query: str):
-    if not GROQ_API_KEY:
+    if not global_groq_api_key:
         raise HTTPException(status_code=500, detail="Clave de API de Groq no configurada.")
     
     try:
         # Configurar la URL y los encabezados de la API de Groq
-        headers = {"Authorization": f"Bearer {GROQ_API_KEY}"}
+        headers = {"Authorization": f"Bearer {global_groq_api_key}"}
         groq_api_url = "https://api.groq.com/v1/query"  # Cambia esta URL según la documentación de Groq
         response = requests.post(groq_api_url, json={"query": query}, headers=headers)
         
