@@ -1,51 +1,47 @@
-from fastapi import FastAPI, HTTPException
-from pydantic import BaseModel
 import requests
-import os
-from dotenv import load_dotenv
+import json
 
-# Cargar variables de entorno desde el archivo .env
-load_dotenv()
+from typing import Union
+from fastapi import FastAPI
 
 app = FastAPI()
 
-# Clase para recibir la clave de API de Groq
-class APIKeyRequest(BaseModel):
-    api_key: str
+@app.get("/llama3/{pregunta}")
+def preguntas(pregunta: str):
+    uri = 'https://api.groq.com/openai/v1/chat/completions'
+    API_KEY = "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"
 
-# Variable global para almacenar la clave de API de Groq
-global_groq_api_key = os.getenv("GROQ_API_KEY")
+    headers = {
+        "Content-Type": "application/json",
+        "Authorization": f"Bearer {API_KEY}"
+    }
 
-# Ruta para verificar si el servicio está activo
-@app.get("/")
-def read_root():
-    return {"message": "API de FastAPI con Groq está en funcionamiento"}
+    data = {
+        "messages": [
+            {
+                "role": "system",
+                "content": "Eres un asistente de gym, eres mi gymbro"
+            },
+            {
+                "role": "user",
+                "content": f"{pregunta}"
+            }
+        ],
+        "model": "llama3-8b-8192",
+        "temperature": 0.7,  # 0 más formal - 1 más creativo
+        "max_tokens": 200,
+        "stream": False,
+        "stop": None
+    }
 
-# Ruta para configurar la clave de API de Groq
-@app.post("/set-api-key")
-def set_api_key(api_key_request: APIKeyRequest):
-    global global_groq_api_key
-    global_groq_api_key = api_key_request.api_key
-    return {"message": "Clave de API de Groq configurada exitosamente"}
+    response = requests.post(uri, json=data, headers=headers)
+    response = json.loads(response.text)
 
-# Ruta para interactuar con Groq
-@app.post("/groq")
-def interact_with_groq(query: str):
-    if not global_groq_api_key:
-        raise HTTPException(status_code=500, detail="Clave de API de Groq no configurada.")
-    
-    try:
-        # Configurar la URL y los encabezados de la API de Groq
-        headers = {"Authorization": f"Bearer {global_groq_api_key}"}
-        groq_api_url = "https://api.groq.com/v1/query"  # Cambia esta URL según la documentación de Groq
-        response = requests.post(groq_api_url, json={"query": query}, headers=headers)
-        
-        if response.status_code != 200:
-            detail_message = response.json().get("error", "Error desconocido")
-            raise HTTPException(status_code=response.status_code, detail=f"Error al conectar con Groq: {detail_message}")
-        
-        response_data = response.json()
-        return {"response": response_data.get("result", "No hay respuesta disponible")}
-    
-    except requests.exceptions.RequestException as e:
-        raise HTTPException(status_code=500, detail=f"Error al conectar con Groq: {str(e)}")
+    return {
+        "Pregunta 🤔": pregunta,
+        "Respuesta 🤖": response['choices'][0]['message']['content'].replace("\n", " ")
+    }
+
+if __name__ == "__main__":
+    import uvicorn
+    uvicorn.run(app, host="0.0.0.0", port=8000)

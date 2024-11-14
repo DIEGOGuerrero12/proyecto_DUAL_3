@@ -24,7 +24,7 @@ def apply_filter(image_path: str) -> str:
 
 def analyze_and_describe_image(image_path: str) -> str:
     # URL y clave de API (reemplaza por la URL correcta de tu API)
-    url = os.getenv("API_URL", "https://your-ai-api.com/analyze-image")  # URL de tu endpoint de análisis de imagen
+    url = os.getenv("API_URL", "https://aistudio.google.com/app/apikey")  # URL de tu endpoint de análisis de imagen
     api_key = os.getenv("API_KEY", "")  # Asegúrate de definir esta variable en el entorno
 
     headers = {
