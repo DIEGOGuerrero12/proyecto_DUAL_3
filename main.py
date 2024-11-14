@@ -1,15 +1,9 @@
-from typing import Union
+#Endpoint para preguntar (usuario) y responder(ia)
+@app.get("/v1/{chat}")
+def mostrar_chat(chat:str):
+    # Llama a la función 'respuesta_ia' pasando el mensaje del usuario que se envió como parámetro 'chat'
+    respuesta = respuesta_ia(chat)
+    # Devuelve la respuesta generada en formato JSON, dentro de un diccionario con la clave "Respuesta"
+    return {"Respuesta": respuesta}
 
-from fastapi import FastAPI
-
-app = FastAPI()
-
-
-@app.get("/")
-def read_root():
-    return {"Hello": "World"}
-
-
-@app.get("/items/{item_id}")
-def read_item(item_id: int, q: Union[str, None] = None):
-    return {"item_id": item_id, "q": q}
+from [no del archivo de la ia] import respuesta_ia
